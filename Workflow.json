@@ -1,0 +1,888 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        -544
+      ],
+      "id": "a37ff9e2-6032-4902-829c-024ca179f9df",
+      "name": "Webhook",
+      "webhookId": "00000000-0000-0000-0000-000000000005"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8d138178-28f2-42e1-b872-9c1728028caa",
+              "name": "invoice_number",
+              "value": "={{ $json.body.invoice_number }}",
+              "type": "string"
+            },
+            {
+              "id": "7ac08d12-6ee9-4421-bc35-b6958ce4032e",
+              "name": "client_name",
+              "value": "={{ $json.body.client_name }}",
+              "type": "string"
+            },
+            {
+              "id": "95ea620e-201a-42f6-911c-33f6daaa9196",
+              "name": "client_email",
+              "value": "={{ $json.body.client_email }}",
+              "type": "string"
+            },
+            {
+              "id": "79895dc3-8296-427a-8709-df0f5bb927ef",
+              "name": "service",
+              "value": "={{ $json.body.service }}",
+              "type": "string"
+            },
+            {
+              "id": "8b402533-30ea-4442-9ebe-52e3139f3be9",
+              "name": "amount",
+              "value": "={{ $json.body.amount }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        -544
+      ],
+      "id": "76b7e70d-94c2-45d4-8be9-9b368a8e167b",
+      "name": "Prepare Invoice Data",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "033fc34f-10f8-4b28-8854-35394ba994cd",
+              "leftValue": "={{ $json.client_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "bc95990d-ae4e-4d68-a10e-69a64a9853c7",
+              "leftValue": "={{ $json.amount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "fbbd9991-4b32-4f93-a09e-a3ab2b30f738",
+              "leftValue": "={{ $json.client_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cbfe0a50-240b-4f18-bec3-d6ed69ce982f",
+              "leftValue": "={{ $json.service }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        -544
+      ],
+      "id": "eb349b86-e06e-44d1-993d-86018485ac98",
+      "name": "Validate Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "05b368e9-03b6-44d5-969e-2fbf4413213e",
+              "name": "invoice_number",
+              "value": "={{\"INV-\"+$now.toFormat(\"yyyyMMdd\")+\"-\"+$execution.id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        -720
+      ],
+      "id": "100d7a47-f3d9-4706-a47a-2866a9240b8c",
+      "name": "Generate Invoice Number"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        800,
+        -640
+      ],
+      "id": "fcd77935-d335-47a2-b734-b0bb0f7f999c",
+      "name": "Merge Invoice Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1eb944cd-621e-4948-9e2d-1349ab6dce10",
+              "name": "Date",
+              "value": "={{$now.format(\"dd LLL yyyy\")}}",
+              "type": "string"
+            },
+            {
+              "id": "c21e5722-37e5-4ff4-b470-8e1606ce32c5",
+              "name": "Due_Date",
+              "value": "={{$now.plus({days:15}).format(\"dd LLL yyyy\")}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        -640
+      ],
+      "id": "b1dd73ff-44c7-45f1-8cf1-06e47e609556",
+      "name": "Generate Dates",
+      "notesInFlow": true,
+      "notes": "Genrate Dates"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5884a6a0-3886-49af-9d12-71f950c2b0c5",
+              "name": "GST",
+              "value": "={{(Number($json.amount)*0.18).toFixed(2)}}",
+              "type": "string"
+            },
+            {
+              "id": "a93ce3d3-4ba4-408c-80af-5a604dbc5b0d",
+              "name": "Total",
+              "value": "={{(Number($json.amount)*1.18).toFixed(2)}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        -640
+      ],
+      "id": "e51e1773-74af-47b4-9692-c0af862102fa",
+      "name": "Calculate GST & Total",
+      "notesInFlow": true,
+      "notes": "GST Calculation"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<meta name=\"viewport\"\ncontent=\"width=device-width, initial-scale=1.0\">\n\n<title>\nInvoice | AutoNode Technologies\n</title>\n\n<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap\"\nrel=\"stylesheet\">\n\n<style>\n\n*{\nmargin:0;\npadding:0;\nbox-sizing:border-box;\n}\n\nbody{\n\nfont-family:'Inter',Arial,sans-serif;\n\nbackground:#eef3f7;\n\npadding:40px;\n\ncolor:#2d3436;\n\n}\n\n.invoice{\n\nwidth:900px;\n\nmargin:auto;\n\nbackground:#fff;\n\nborder-radius:16px;\n\noverflow:hidden;\n\nbox-shadow:\n0 15px 45px rgba(0,0,0,.12);\n\n}\n.header{\n\nbackground:linear-gradient(\n135deg,\n#0F6E56,\n#1D9E75\n);\n\ncolor:#fff;\n\npadding:45px;\n\ndisplay:flex;\n\njustify-content:space-between;\n\nalign-items:flex-start;\n\n}\n\n.company{\n\nwidth:60%;\n\n}\n\n.company h1{\n\nfont-size:36px;\n\nfont-weight:700;\n\nmargin-bottom:10px;\n\nletter-spacing:.5px;\n\n}\n\n.company .tagline{\n\nfont-size:15px;\n\nopacity:.95;\n\nmargin-bottom:20px;\n\n}\n\n.company p{\n\nfont-size:14px;\n\nmargin:6px 0;\n\nline-height:1.6;\n\n}\n\n.invoice-info{\n\ntext-align:right;\n\n}\n\n.invoice-info h2{\n\nfont-size:42px;\n\nletter-spacing:2px;\n\nmargin-bottom:20px;\n\n}\n\n.badge{\n\ndisplay:inline-block;\n\nbackground:#ffffff22;\n\npadding:8px 18px;\n\nborder-radius:30px;\n\nfont-size:13px;\n\nfont-weight:600;\n\nmargin-bottom:20px;\n\n}\n\n.invoice-info p{\n\nfont-size:14px;\n\nmargin:8px 0;\n\n}\n\n.section{\n\npadding:40px;\n\n}\n\n.row{\n\ndisplay:flex;\n\njustify-content:space-between;\n\ngap:40px;\n\nmargin-bottom:40px;\n\n}\n\n.box{\n\nflex:1;\n\nbackground:#fafafa;\n\npadding:25px;\n\nborder-radius:12px;\n\nborder:1px solid #ececec;\n\n}\n\n.box h3{\n\ncolor:#0F6E56;\n\nfont-size:18px;\n\nmargin-bottom:18px;\n\nborder-bottom:2px solid #1D9E75;\n\npadding-bottom:8px;\n\ndisplay:inline-block;\n\n}\n\n.box p{\n\nfont-size:15px;\n\nmargin:10px 0;\n\nline-height:1.7;\n\n}\ntable{\n\nwidth:100%;\n\nborder-collapse:collapse;\n\nmargin-top:20px;\n\nborder-radius:12px;\n\noverflow:hidden;\n\n}\n\nthead{\n\nbackground:#0F6E56;\n\ncolor:#fff;\n\n}\n\nth{\n\npadding:16px;\n\nfont-size:15px;\n\nfont-weight:600;\n\ntext-align:left;\n\n}\n\ntd{\n\npadding:16px;\n\nfont-size:15px;\n\nborder-bottom:1px solid #ececec;\n\n}\n\ntbody tr:nth-child(even){\n\nbackground:#fafafa;\n\n}\n\ntbody tr:hover{\n\nbackground:#f2fbf8;\n\ntransition:.25s;\n\n}\n\n.amount{\n\ntext-align:right;\n\nfont-weight:600;\n\n}\n\n.summary{\n\nwidth:360px;\n\nmargin-left:auto;\n\nmargin-top:35px;\n\nbackground:#fafafa;\n\nborder:1px solid #e7e7e7;\n\nborder-radius:12px;\n\npadding:22px;\n\n}\n\n.summary table{\n\nmargin:0;\n\n}\n\n.summary td{\n\npadding:12px 0;\n\nborder:none;\n\nfont-size:15px;\n\n}\n\n.summary tr:not(:last-child){\n\nborder-bottom:1px dashed #ddd;\n\n}\n\n.summary .label{\n\nfont-weight:500;\n\ncolor:#555;\n\n}\n\n.summary .value{\n\ntext-align:right;\n\nfont-weight:600;\n\n}\n\n.total-row{\n\nborder-top:2px solid #1D9E75;\n\n}\n\n.total-row td{\n\npadding-top:18px;\n\nfont-size:22px;\n\nfont-weight:700;\n\ncolor:#0F6E56;\n\n}\n.payment{\n\nmargin-top:45px;\n\npadding:28px;\n\nbackground:#F5FBF9;\n\nborder-left:6px solid #1D9E75;\n\nborder-radius:10px;\n\n}\n\n.payment h3{\n\nfont-size:20px;\n\ncolor:#0F6E56;\n\nmargin-bottom:18px;\n\n}\n\n.payment ul{\n\nmargin-left:20px;\n\nline-height:2;\n\nfont-size:15px;\n\n}\n\n.bank{\n\nmargin-top:30px;\n\ndisplay:grid;\n\ngrid-template-columns:1fr 1fr;\n\ngap:20px;\n\n}\n\n.bank-card{\n\nbackground:#ffffff;\n\nborder:1px solid #e5e5e5;\n\npadding:20px;\n\nborder-radius:12px;\n\n}\n\n.bank-card h4{\n\ncolor:#0F6E56;\n\nmargin-bottom:12px;\n\nfont-size:17px;\n\n}\n\n.bank-card p{\n\nmargin:8px 0;\n\nfont-size:14px;\n\nline-height:1.7;\n\n}\n\n.note{\n\nmargin-top:35px;\n\nbackground:#FFF8E8;\n\nborder-left:5px solid #F4B400;\n\npadding:18px;\n\nborder-radius:10px;\n\nfont-size:14px;\n\nline-height:1.8;\n\n}\n\n.footer{\n\nmargin-top:40px;\n\nbackground:#0F6E56;\n\ncolor:#fff;\n\npadding:35px;\n\ntext-align:center;\n\n}\n\n.footer h3{\n\nfont-size:24px;\n\nmargin-bottom:12px;\n\n}\n\n.footer p{\n\nmargin:8px 0;\n\nfont-size:14px;\n\nopacity:.95;\n\nline-height:1.8;\n\n}\n\n.footer small{\n\ndisplay:block;\n\nmargin-top:20px;\n\nopacity:.75;\n\nfont-size:13px;\n\n}\n\n@media print{\n\nbody{\n\nbackground:#fff;\n\npadding:0;\n\n}\n\n.invoice{\n\nwidth:100%;\n\nbox-shadow:none;\n\nborder-radius:0;\n\n}\n\n}\n</style>\n\n</head>\n<body>\n\n<div class=\"invoice\">\n\n<div class=\"header\">\n\n<div class=\"company\">\n\n<h1>AutoNode Technologies</h1>\n\n<p class=\"tagline\">\n\nAI Automations & AI Agents for Business\n\n</p>\n\n<p>\n📧 contact@yourcompany.example\n</p>\n\n<p>\n🌐 support@yourcompany.example\n</p>\n\n<p>\n📞 +91 90000 00000\n</p>\n\n</div>\n\n<div class=\"invoice-info\">\n\n<div class=\"badge\">\n\nInvoice\n\n</div>\n\n<h2>INVOICE</h2>\n\n<p>\n\n<strong>Invoice No :</strong>\n\n{{ $json.invoice_number }}\n\n</p>\n\n<p>\n\n<strong>Invoice Date :</strong>\n\n{{ $json.Date }}\n\n</p>\n\n<p>\n\n<strong>Due Date :</strong>\n\n{{ $json.Due_Date }}\n\n</p>\n\n</div>\n\n</div>\n\n<div class=\"section\">\n<div class=\"row\">\n\n<div class=\"box\">\n\n<h3>Bill To</h3>\n\n<p><strong>{{ $json.client_name }}</strong></p>\n\n<p>{{ $json.client_email }}</p>\n\n</div>\n\n<div class=\"box\">\n\n<h3>Invoice Details</h3>\n\n<p><strong>Service :</strong> {{ $json.service }}</p>\n\n<p><strong>Status :</strong> Pending</p>\n\n<p><strong>Currency :</strong> INR (₹)</p>\n\n</div>\n\n</div>\n\n<table>\n\n<thead>\n\n<tr>\n\n<th>Description</th>\n\n<th style=\"text-align:center;\">Qty</th>\n\n<th style=\"text-align:right;\">Unit Price</th>\n\n<th style=\"text-align:right;\">Amount</th>\n\n</tr>\n\n</thead>\n\n<tbody>\n\n<tr>\n\n<td>\n\n<strong>{{ $json.service }}</strong>\n\n<br>\n\n<span style=\"font-size:13px;color:#777;\">\n\nProfessional AI Automation & Development Service\n\n</span>\n\n</td>\n\n<td style=\"text-align:center;\">\n\n1\n\n</td>\n\n<td class=\"amount\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n<td class=\"amount\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n</tr>\n\n</tbody>\n\n</table>\n<div class=\"summary\">\n\n<table>\n\n<tr>\n\n<td class=\"label\">\n\nSubtotal\n\n</td>\n\n<td class=\"value\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n</tr>\n\n<tr>\n\n<td class=\"label\">\n\nGST (18%)\n\n</td>\n\n<td class=\"value\">\n\n₹ {{ $json.GST }}\n\n</td>\n\n</tr>\n\n<tr class=\"total-row\">\n\n<td>\n\nGrand Total\n\n</td>\n\n<td style=\"text-align:right;\">\n\n₹ {{ $json.Total }}\n\n</td>\n\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"payment\">\n\n<h3>Payment Terms</h3>\n\n<ul>\n\n<li>Payment is due within 15 days from the invoice date.</li>\n\n<li>Please mention the Invoice Number while making payment.</li>\n\n<li>Late payments may incur additional charges.</li>\n\n<li>This invoice is generated automatically by AutoNode.</li>\n\n</ul>\n\n</div>\n\n<div class=\"bank\">\n\n<div class=\"bank-card\">\n\n<h4>Payment Methods</h4>\n\n<p>✔ Bank Transfer</p>\n\n<p>✔ UPI</p>\n\n<p>✔ NEFT / IMPS / RTGS</p>\n\n</div>\n\n<div class=\"bank-card\">\n\n<h4>Support</h4>\n\n<p>📧 contact@yourcompany.example</p>\n\n<p>📞 +91 90000 00000</p>\n\n<p>AI Automation Support</p>\n\n</div>\n\n</div>\n\n<div class=\"note\">\n\n<strong>Note:</strong>\n\nThank you for choosing <strong>AutoNode Technologies</strong>.\nWe appreciate your business and look forward to working with you again.\n\n</div>\n\n</div>\n\n<div class=\"footer\">\n\n<h3>Thank You ❤️</h3>\n\n<p>AutoNode Technologies</p>\n\n<p>AI Automations & AI Agents for Business</p>\n\n<p>Invoice generated automatically by AutoNode AI.</p>\n\n<small>\n\n© 2026 AutoNode Technologies. All Rights Reserved.\n\n</small>\n\n</div>\n\n</div>\n\n</body>\n\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        -640
+      ],
+      "id": "21e5a12e-2fbd-4795-ad8e-592eea17277c",
+      "name": "Generate Invoice HTML"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.html }}",
+        "additionalOptions": {
+          "filename": "={{$('Calculate GST & Total').item.json.invoice_number}}.pdf"
+        }
+      },
+      "type": "n8n-nodes-pdfbolt.pdfBolt",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        -640
+      ],
+      "id": "a1cde7ba-d66c-4319-98e7-6b0faa99eee3",
+      "name": "Generate Invoice PDF",
+      "credentials": {
+        "pdfBoltApi": {
+          "id": "FAKE_PDFBOLT_CRED_ID",
+          "name": "PDFBolt account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{\n$('Calculate GST & Total').item.json.invoice_number\n+\"_\"+\n\n$('Calculate GST & Total').item.json.client_name.replace(/[^a-zA-Z0-9]/g,\"_\")\n\n+\".pdf\"\n}}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "FAKE_DRIVE_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/FAKE_DRIVE_FOLDER_ID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1920,
+        -736
+      ],
+      "id": "79e20ae0-3eaf-40a8-a472-92e6d9e6772e",
+      "name": "Upload PDF to Google Drive",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "FAKE_GDRIVE_CRED_ID",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "FAKE_GOOGLE_SHEET_ID_1234567890",
+          "mode": "list",
+          "cachedResultName": "leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/FAKE_GOOGLE_SHEET_ID_1234567890/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 0,
+          "mode": "list",
+          "cachedResultName": "Invoice Ragister",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/FAKE_GOOGLE_SHEET_ID_1234567890/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "client_name": "={{ $('Calculate GST & Total').item.json.client_name }}",
+            "invoice_number": "={{ $('Calculate GST & Total').item.json.invoice_number }}",
+            "client_email": "={{ $('Calculate GST & Total').item.json.client_email }}",
+            "service": "={{ $('Calculate GST & Total').item.json.service }}",
+            "amount": "={{ $('Calculate GST & Total').item.json.amount }}",
+            "Date": "={{ $('Calculate GST & Total').item.json.Date }}",
+            "Due_Date": "={{ $('Calculate GST & Total').item.json.Due_Date }}",
+            "GST": "={{ $('Calculate GST & Total').item.json.GST }}",
+            "Total": "={{ $('Calculate GST & Total').item.json.Total }}",
+            "Status": "Sent",
+            "Pdf Link": "={{ $('Upload PDF to Google Drive').item.json.webViewLink }}",
+            "Created_At": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "invoice_number"
+          ],
+          "schema": [
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due_Date",
+              "displayName": "Due_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "GST",
+              "displayName": "GST",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pdf Link",
+              "displayName": "Pdf Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2144,
+        -736
+      ],
+      "id": "4d9bf95e-4c69-475c-9466-51463411f1a0",
+      "name": "Save Invoice Record",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleApi": {
+          "id": "FAKE_GOOGLE_CRED_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Calculate GST & Total').item.json.client_email }}",
+        "subject": "=Invoice {{$('Calculate GST & Total').item.json.invoice_number}}",
+        "message": "=Hi,please find attached your invoice {{ $('Calculate GST & Total').item.json.invoice_number }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          },
+          "bccList": "your-email@example.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2144,
+        -544
+      ],
+      "id": "f94c724c-16d1-43ad-b0a7-51914f1d0a65",
+      "name": "Send Invoice Email",
+      "webhookId": "00000000-0000-0000-0000-000000000006",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "FAKE_GMAIL_CRED_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0000000000",
+          "mode": "list",
+          "cachedResultName": "your-channel-name"
+        },
+        "text": "=💰 *New Invoice Generated Successfully*  ━━━━━━━━━━━━━━━━━━━━━━  📄 *Invoice Number* {{$('Calculate GST & Total').item.json.invoice_number}}  👤 *Client* {{$('Prepare Invoice Data').item.json.client_name}}  📧 *Email* {{$('Prepare Invoice Data').item.json.client_email}}  🛠 *Service* {{$('Prepare Invoice Data').item.json.service}}  💵 *Subtotal* ₹ {{$('Prepare Invoice Data').item.json.amount}}  🧾 *GST* ₹ {{ $('Calculate GST & Total').item.json.GST }}  💰 *Grand Total* ₹ {{ $('Calculate GST & Total').item.json.Total }}  📅 *Due Date* {{ $('Calculate GST & Total').item.json.Due_Date }} 📂 *Invoice PDF* {{ $('Upload PDF to Google Drive').item.json.webViewLink }} Execution Time: {{$now.toFormat(\"dd LLL yyyy HH:mm:ss\")}} ━━━━━━━━━━━━━━━━━━━━━━  ✅ Google Drive Uploaded  ✅ Google Sheet Updated  ✅ Invoice Email Sent  🤖 AutoNode Invoice Automation",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2592,
+        -640
+      ],
+      "id": "a5c75615-5641-4bb5-8958-603841bb2f87",
+      "name": "Send Slack Notification",
+      "webhookId": "00000000-0000-0000-0000-000000000007",
+      "credentials": {
+        "slackApi": {
+          "id": "FAKE_SLACK_CRED_ID",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"message\": \"Missing or invalid invoice data.\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        352,
+        -448
+      ],
+      "id": "348eb844-8b03-4e9f-81eb-bfc00f469521",
+      "name": "Return Validation Error"
+    },
+    {
+      "parameters": {
+        "content": "Receives invoice data from external API\nand validates required fields.",
+        "width": 544
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -752
+      ],
+      "id": "30daeb7c-8be3-40e6-aada-46063366c372",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Creates invoice number,\ncalculates GST,\ngenerates dates.",
+        "width": 976
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -880
+      ],
+      "id": "7e086e19-c61d-4e4a-95bb-c14ddcab0b9f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Creates HTML invoice\nand converts it into PDF.",
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -848
+      ],
+      "id": "fa33a6ec-89dc-416c-9515-2d91c5604ef9",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Uploads PDF to Drive\nand stores metadata.",
+        "width": 544
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        -944
+      ],
+      "id": "15892182-d42f-48c2-a865-bada3e138522",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "Email client\nNotify Slack\nReturn API response.",
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        -816
+      ],
+      "id": "e9cfe4c0-1d3f-4cbc-9fb6-6d578e315d3a",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Invoice generated successfully.\",\n  \"data\": {\n    \"invoice_number\": \"{{ $('Calculate GST & Total').item.json.invoice_number }}\",\n    \"client_name\": \"{{ $('Calculate GST & Total').item.json.client_name }}\",\n    \"client_email\": \"{{ $('Calculate GST & Total').item.json.client_email }}\",\n    \"service\": \"{{ $('Calculate GST & Total').item.json.service }}\",\n    \"subtotal\": {{ Number($('Calculate GST & Total').item.json.amount) }},\n    \"gst\": {{ Number($('Calculate GST & Total').item.json.GST) }},\n    \"total\": {{ Number($('Calculate GST & Total').item.json.Total) }},\n    \"invoice_date\": \"{{ $('Calculate GST & Total').item.json.Date }}\",\n    \"due_date\": \"{{ $('Calculate GST & Total').item.json.Due_Date }}\",\n    \"status\": \"Pending\",\n    \"pdf_url\": \"{{ $('Upload PDF to Google Drive').item.json.webViewLink }}\",\n    \"created_at\": \"{{ $now.toISO() }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2816,
+        -640
+      ],
+      "id": "af371555-dcbf-4bf4-8e0d-498c76c6b908",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2368,
+        -640
+      ],
+      "id": "3c595788-7486-4b39-b99b-629b5046af80",
+      "name": "Merge Invoice Success Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "504d905c-117f-47bb-8e6f-dd26e73f9c9d",
+              "leftValue": "={{ $json.invoice_number }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        -640
+      ],
+      "id": "3163e49c-d56e-4069-87a9-ebe391dc7d90",
+      "name": "Invoice Number Empty?"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request": {
+      "main": [
+        [
+          {
+            "node": "Invoice Number Empty?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice Number": {
+      "main": [
+        [
+          {
+            "node": "Merge Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Dates": {
+      "main": [
+        [
+          {
+            "node": "Calculate GST & Total",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate GST & Total": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice HTML": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload PDF to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload PDF to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Save Invoice Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Invoice Record": {
+      "main": [
+        [
+          {
+            "node": "Merge Invoice Success Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Invoice Email": {
+      "main": [
+        [
+          {
+            "node": "Merge Invoice Success Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Invoice Success Data": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Number Empty?": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice Number",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Invoice Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

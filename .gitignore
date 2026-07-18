@@ -1,0 +1,11 @@
+.env
+.env.*
+*.sqlite
+*.db
+*.log
+.vscode/
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+node_modules/
