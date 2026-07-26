@@ -137,18 +137,6 @@ Configure the following credentials inside n8n before running:
 
 ---
 
-## Screenshots
-
-Add screenshots inside the `screenshots` folder:
-
-* Workflow
-* Generated Invoice
-* Email
-* Google Drive
-* Google Sheet
-* Slack Notification
-
----
 
 ## Author
 
