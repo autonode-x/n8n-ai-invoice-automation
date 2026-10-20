@@ -3,52 +3,95 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "invoice",
+        "path": "invoice-intake-portfolio",
         "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -320,
-        -544
+        -3520,
+        672
       ],
-      "id": "a37ff9e2-6032-4902-829c-024ca179f9df",
-      "name": "Webhook",
-      "webhookId": "00000000-0000-0000-0000-000000000005"
+      "id": "cac2ae10-a552-4286-98a3-2abd09cbe668",
+      "name": "Invoice Intake Webhook - Configure Authentication",
+      "notesInFlow": true,
+      "notes": "SECURITY BLOCKER: The source export does not show webhook authentication configured. Add strong authentication, rate limiting, request-size limits, and abuse monitoring before activation. This workflow can generate and email financial documents."
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "8d138178-28f2-42e1-b872-9c1728028caa",
-              "name": "invoice_number",
-              "value": "={{ $json.body.invoice_number }}",
+              "id": "3878cd1e-8cfe-49d6-99eb-ad96a2733988",
+              "name": "request_id",
+              "value": "={{ String($json.body?.request_id ?? '').trim() }}",
               "type": "string"
             },
             {
-              "id": "7ac08d12-6ee9-4421-bc35-b6958ce4032e",
+              "id": "a668910f-8b35-4d98-a584-1f73a7d9e5de",
               "name": "client_name",
-              "value": "={{ $json.body.client_name }}",
+              "value": "={{ String($json.body?.client_name ?? '').trim() }}",
               "type": "string"
             },
             {
-              "id": "95ea620e-201a-42f6-911c-33f6daaa9196",
+              "id": "af845b39-c5a2-40a6-9cc0-791972282e12",
               "name": "client_email",
-              "value": "={{ $json.body.client_email }}",
+              "value": "={{ String($json.body?.client_email ?? '').trim().toLowerCase() }}",
               "type": "string"
             },
             {
-              "id": "79895dc3-8296-427a-8709-df0f5bb927ef",
+              "id": "6682345e-8907-48cb-8d51-518463a043a3",
               "name": "service",
-              "value": "={{ $json.body.service }}",
+              "value": "={{ String($json.body?.service ?? '').trim() }}",
               "type": "string"
             },
             {
-              "id": "8b402533-30ea-4442-9ebe-52e3139f3be9",
+              "id": "acc63ed5-1208-47a8-a937-acd7ee72ff61",
               "name": "amount",
-              "value": "={{ $json.body.amount }}",
+              "value": "={{ String($json.body?.amount ?? '') }}",
+              "type": "number"
+            },
+            {
+              "id": "fa8aaa9e-d52a-47c0-a9e7-cc58aedad40a",
+              "name": "request_id_is_string",
+              "value": "={{ typeof $json.body?.request_id === 'string' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "5fc4a785-2752-47ab-805b-22be66cbf644",
+              "name": "client_name_is_string",
+              "value": "={{ typeof $json.body?.client_name === 'string' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "6f7cb728-6039-4f71-bb08-63a0c2d030a6",
+              "name": "email_is_string",
+              "value": "={{ typeof $json.body?.client_email === 'string' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "93ffe846-e8ea-413f-9fae-75421918b319",
+              "name": "service_is_string",
+              "value": "={{ typeof $json.body?.service === 'string' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c0dc5478-08f8-41e3-8ef9-50db3036921e",
+              "name": "amount_is_number",
+              "value": "={{ typeof $json.body?.amount === 'number' || typeof $json.body?.amount === 'string' }}",
+              "type": "boolean"
+            },
+            {
+              "id": "7818ce72-806b-4826-85c6-2668586e2d97",
+              "name": "gst_rate_percent",
+              "value": 18,
+              "type": "number"
+            },
+            {
+              "id": "7e24f54b-bf8c-4de7-b63b-2a92bbf34010",
+              "name": "created_at",
+              "value": "={{ $now.setZone('Asia/Kolkata').toISO() }}",
               "type": "string"
             }
           ]
@@ -58,11 +101,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -96,
-        -544
+        -3296,
+        672
       ],
-      "id": "76b7e70d-94c2-45d4-8be9-9b368a8e167b",
-      "name": "Prepare Invoice Data",
+      "id": "65b460d1-f5da-46f3-913e-929206361591",
+      "name": "Normalize Invoice Request",
       "notesInFlow": false
     },
     {
@@ -71,114 +114,154 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose",
+            "typeValidation": "strict",
             "version": 3
           },
           "conditions": [
             {
-              "id": "033fc34f-10f8-4b28-8854-35394ba994cd",
-              "leftValue": "={{ $json.client_email }}",
-              "rightValue": "",
+              "id": "79a96cb8-d4a7-44b9-805e-781f5e4edce7",
+              "leftValue": "={{ $json.request_id_is_string && /^[A-Za-z0-9_-]{8,100}$/.test($json.request_id) }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "notEmpty",
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             },
             {
-              "id": "bc95990d-ae4e-4d68-a10e-69a64a9853c7",
-              "leftValue": "={{ $json.amount }}",
-              "rightValue": 0,
+              "id": "dc19a863-f039-486f-ac03-5d292c1e8f0a",
+              "leftValue": "={{ $json.client_name_is_string && $json.client_name.length >= 2 && $json.client_name.length <= 120 }}",
+              "rightValue": true,
               "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            },
-            {
-              "id": "fbbd9991-4b32-4f93-a09e-a3ab2b30f738",
-              "leftValue": "={{ $json.client_name }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             },
             {
-              "id": "cbfe0a50-240b-4f18-bec3-d6ed69ce982f",
-              "leftValue": "={{ $json.service }}",
-              "rightValue": "",
+              "id": "6b905908-853c-46bc-b163-e69f7b32488e",
+              "leftValue": "={{ $json.email_is_string && $json.client_email.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test($json.client_email) }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "notEmpty",
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0c775530-4b60-446a-970d-eaadf2d24c5c",
+              "leftValue": "={{ $json.service_is_string && $json.service.length >= 2 && $json.service.length <= 500 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "31f0f34a-e2d0-4ded-a43b-d6795c251bc4",
+              "leftValue": "={{ $json.amount_is_number && /^\\d{1,8}(\\.\\d{1,2})?$/.test($json.amount) && Number($json.amount) > 0 && Number($json.amount) <= 10000000 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             }
           ],
           "combinator": "and"
         },
-        "looseTypeValidation": true,
         "options": {}
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        128,
-        -544
+        -3072,
+        672
       ],
-      "id": "eb349b86-e06e-44d1-993d-86018485ac98",
-      "name": "Validate Request",
+      "id": "1cef872a-aa41-4ce9-bd53-4ce1c72f6fff",
+      "name": "Validate Invoice Request",
       "alwaysOutputData": true
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "05b368e9-03b6-44d5-969e-2fbf4413213e",
-              "name": "invoice_number",
-              "value": "={{\"INV-\"+$now.toFormat(\"yyyyMMdd\")+\"-\"+$execution.id}}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
-        "options": {}
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, status: 'invalid_request', message: 'Provide valid request_id, client_name, client_email, service, and positive amount.' } }}",
+        "options": {
+          "responseCode": 400
+        }
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
       "position": [
-        576,
-        -720
+        -2848,
+        768
       ],
-      "id": "100d7a47-f3d9-4706-a47a-2866a9240b8c",
-      "name": "Generate Invoice Number"
+      "id": "234654fa-2510-453d-8be7-30634f425775",
+      "name": "Reject Invalid Invoice Request"
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a3943f7a-61b2-4a1f-a31d-01cf6024a763",
+              "leftValue": "={{ String($json.request_id ?? '').trim().length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
       "position": [
-        800,
-        -640
+        -2624,
+        480
       ],
-      "id": "fcd77935-d335-47a2-b734-b0bb0f7f999c",
-      "name": "Merge Invoice Data"
+      "id": "fec2b083-e768-4179-8349-cd6aa5b737a9",
+      "name": "Request Already Exists?",
+      "alwaysOutputData": false,
+      "notesInFlow": true,
+      "notes": "Treat a returned row as a duplicate only when it contains an invoice_number. Confirm the sheet header is exactly request_id and the request_id value is stored as text."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, status: 'duplicate', request_id: $('Normalize Invoice Request').item.json.request_id, invoice_number: $json.invoice_number ?? null, invoice_status: $json.Status ?? 'unknown', message: 'This request was already processed; no second invoice email was sent.' } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -2400,
+        384
+      ],
+      "id": "cd2fa0e0-be5f-44df-a85b-1d4ea2e33a37",
+      "name": "Return Existing Invoice"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "1eb944cd-621e-4948-9e2d-1349ab6dce10",
-              "name": "Date",
-              "value": "={{$now.format(\"dd LLL yyyy\")}}",
-              "type": "string"
-            },
-            {
-              "id": "c21e5722-37e5-4ff4-b470-8e1606ce32c5",
-              "name": "Due_Date",
-              "value": "={{$now.plus({days:15}).format(\"dd LLL yyyy\")}}",
+              "id": "1812de7e-640b-46aa-821a-62c4b78dfad3",
+              "name": "invoice_number",
+              "value": "={{ 'INV-' + $now.setZone('Asia/Kolkata').toFormat('yyyyMMdd') + '-' + $execution.id }}",
               "type": "string"
             }
           ]
@@ -189,11 +272,41 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1024,
-        -640
+        -2176,
+        576
       ],
-      "id": "b1dd73ff-44c7-45f1-8cf1-06e47e609556",
-      "name": "Generate Dates",
+      "id": "15f871af-f55b-4cb3-b638-f90fee05714d",
+      "name": "Generate Invoice Number"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ed3db51-51a6-44e7-b510-2e25f4948189",
+              "name": "Date",
+              "value": "={{ $now.setZone('Asia/Kolkata').toFormat('dd LLL yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "2be06c04-c7ef-4448-b96d-fa1731833f45",
+              "name": "Due_Date",
+              "value": "={{ $now.setZone('Asia/Kolkata').plus({ days: 15 }).toFormat('dd LLL yyyy') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1952,
+        576
+      ],
+      "id": "97c56ac2-c0ff-4cad-a0f7-b26ca422e6a5",
+      "name": "Generate Invoice Dates",
       "notesInFlow": true,
       "notes": "Genrate Dates"
     },
@@ -202,15 +315,15 @@
         "assignments": {
           "assignments": [
             {
-              "id": "5884a6a0-3886-49af-9d12-71f950c2b0c5",
+              "id": "89f9cd01-516e-4b26-adec-cb5ce9e75375",
               "name": "GST",
-              "value": "={{(Number($json.amount)*0.18).toFixed(2)}}",
+              "value": "={{ (Math.round(Number($('Normalize Invoice Request').item.json.amount) * 100 * Number($('Normalize Invoice Request').item.json.gst_rate_percent) / 100) / 100).toFixed(2) }}",
               "type": "string"
             },
             {
-              "id": "a93ce3d3-4ba4-408c-80af-5a604dbc5b0d",
+              "id": "882f54f8-6cfc-4f78-a89f-daf24794cf3a",
               "name": "Total",
-              "value": "={{(Number($json.amount)*1.18).toFixed(2)}}",
+              "value": "={{ ((Math.round(Number($('Normalize Invoice Request').item.json.amount) * 100) + Math.round(Number($('Normalize Invoice Request').item.json.amount) * 100 * Number($('Normalize Invoice Request').item.json.gst_rate_percent) / 100)) / 100).toFixed(2) }}",
               "type": "string"
             }
           ]
@@ -221,83 +334,13 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1248,
-        -640
+        -1728,
+        576
       ],
-      "id": "e51e1773-74af-47b4-9692-c0af862102fa",
-      "name": "Calculate GST & Total",
+      "id": "447f43d4-a954-4dcc-82c2-fe55f65771d2",
+      "name": "Calculate Tax and Invoice Total",
       "notesInFlow": true,
       "notes": "GST Calculation"
-    },
-    {
-      "parameters": {
-        "html": "<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<meta name=\"viewport\"\ncontent=\"width=device-width, initial-scale=1.0\">\n\n<title>\nInvoice | AutoNode Technologies\n</title>\n\n<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap\"\nrel=\"stylesheet\">\n\n<style>\n\n*{\nmargin:0;\npadding:0;\nbox-sizing:border-box;\n}\n\nbody{\n\nfont-family:'Inter',Arial,sans-serif;\n\nbackground:#eef3f7;\n\npadding:40px;\n\ncolor:#2d3436;\n\n}\n\n.invoice{\n\nwidth:900px;\n\nmargin:auto;\n\nbackground:#fff;\n\nborder-radius:16px;\n\noverflow:hidden;\n\nbox-shadow:\n0 15px 45px rgba(0,0,0,.12);\n\n}\n.header{\n\nbackground:linear-gradient(\n135deg,\n#0F6E56,\n#1D9E75\n);\n\ncolor:#fff;\n\npadding:45px;\n\ndisplay:flex;\n\njustify-content:space-between;\n\nalign-items:flex-start;\n\n}\n\n.company{\n\nwidth:60%;\n\n}\n\n.company h1{\n\nfont-size:36px;\n\nfont-weight:700;\n\nmargin-bottom:10px;\n\nletter-spacing:.5px;\n\n}\n\n.company .tagline{\n\nfont-size:15px;\n\nopacity:.95;\n\nmargin-bottom:20px;\n\n}\n\n.company p{\n\nfont-size:14px;\n\nmargin:6px 0;\n\nline-height:1.6;\n\n}\n\n.invoice-info{\n\ntext-align:right;\n\n}\n\n.invoice-info h2{\n\nfont-size:42px;\n\nletter-spacing:2px;\n\nmargin-bottom:20px;\n\n}\n\n.badge{\n\ndisplay:inline-block;\n\nbackground:#ffffff22;\n\npadding:8px 18px;\n\nborder-radius:30px;\n\nfont-size:13px;\n\nfont-weight:600;\n\nmargin-bottom:20px;\n\n}\n\n.invoice-info p{\n\nfont-size:14px;\n\nmargin:8px 0;\n\n}\n\n.section{\n\npadding:40px;\n\n}\n\n.row{\n\ndisplay:flex;\n\njustify-content:space-between;\n\ngap:40px;\n\nmargin-bottom:40px;\n\n}\n\n.box{\n\nflex:1;\n\nbackground:#fafafa;\n\npadding:25px;\n\nborder-radius:12px;\n\nborder:1px solid #ececec;\n\n}\n\n.box h3{\n\ncolor:#0F6E56;\n\nfont-size:18px;\n\nmargin-bottom:18px;\n\nborder-bottom:2px solid #1D9E75;\n\npadding-bottom:8px;\n\ndisplay:inline-block;\n\n}\n\n.box p{\n\nfont-size:15px;\n\nmargin:10px 0;\n\nline-height:1.7;\n\n}\ntable{\n\nwidth:100%;\n\nborder-collapse:collapse;\n\nmargin-top:20px;\n\nborder-radius:12px;\n\noverflow:hidden;\n\n}\n\nthead{\n\nbackground:#0F6E56;\n\ncolor:#fff;\n\n}\n\nth{\n\npadding:16px;\n\nfont-size:15px;\n\nfont-weight:600;\n\ntext-align:left;\n\n}\n\ntd{\n\npadding:16px;\n\nfont-size:15px;\n\nborder-bottom:1px solid #ececec;\n\n}\n\ntbody tr:nth-child(even){\n\nbackground:#fafafa;\n\n}\n\ntbody tr:hover{\n\nbackground:#f2fbf8;\n\ntransition:.25s;\n\n}\n\n.amount{\n\ntext-align:right;\n\nfont-weight:600;\n\n}\n\n.summary{\n\nwidth:360px;\n\nmargin-left:auto;\n\nmargin-top:35px;\n\nbackground:#fafafa;\n\nborder:1px solid #e7e7e7;\n\nborder-radius:12px;\n\npadding:22px;\n\n}\n\n.summary table{\n\nmargin:0;\n\n}\n\n.summary td{\n\npadding:12px 0;\n\nborder:none;\n\nfont-size:15px;\n\n}\n\n.summary tr:not(:last-child){\n\nborder-bottom:1px dashed #ddd;\n\n}\n\n.summary .label{\n\nfont-weight:500;\n\ncolor:#555;\n\n}\n\n.summary .value{\n\ntext-align:right;\n\nfont-weight:600;\n\n}\n\n.total-row{\n\nborder-top:2px solid #1D9E75;\n\n}\n\n.total-row td{\n\npadding-top:18px;\n\nfont-size:22px;\n\nfont-weight:700;\n\ncolor:#0F6E56;\n\n}\n.payment{\n\nmargin-top:45px;\n\npadding:28px;\n\nbackground:#F5FBF9;\n\nborder-left:6px solid #1D9E75;\n\nborder-radius:10px;\n\n}\n\n.payment h3{\n\nfont-size:20px;\n\ncolor:#0F6E56;\n\nmargin-bottom:18px;\n\n}\n\n.payment ul{\n\nmargin-left:20px;\n\nline-height:2;\n\nfont-size:15px;\n\n}\n\n.bank{\n\nmargin-top:30px;\n\ndisplay:grid;\n\ngrid-template-columns:1fr 1fr;\n\ngap:20px;\n\n}\n\n.bank-card{\n\nbackground:#ffffff;\n\nborder:1px solid #e5e5e5;\n\npadding:20px;\n\nborder-radius:12px;\n\n}\n\n.bank-card h4{\n\ncolor:#0F6E56;\n\nmargin-bottom:12px;\n\nfont-size:17px;\n\n}\n\n.bank-card p{\n\nmargin:8px 0;\n\nfont-size:14px;\n\nline-height:1.7;\n\n}\n\n.note{\n\nmargin-top:35px;\n\nbackground:#FFF8E8;\n\nborder-left:5px solid #F4B400;\n\npadding:18px;\n\nborder-radius:10px;\n\nfont-size:14px;\n\nline-height:1.8;\n\n}\n\n.footer{\n\nmargin-top:40px;\n\nbackground:#0F6E56;\n\ncolor:#fff;\n\npadding:35px;\n\ntext-align:center;\n\n}\n\n.footer h3{\n\nfont-size:24px;\n\nmargin-bottom:12px;\n\n}\n\n.footer p{\n\nmargin:8px 0;\n\nfont-size:14px;\n\nopacity:.95;\n\nline-height:1.8;\n\n}\n\n.footer small{\n\ndisplay:block;\n\nmargin-top:20px;\n\nopacity:.75;\n\nfont-size:13px;\n\n}\n\n@media print{\n\nbody{\n\nbackground:#fff;\n\npadding:0;\n\n}\n\n.invoice{\n\nwidth:100%;\n\nbox-shadow:none;\n\nborder-radius:0;\n\n}\n\n}\n</style>\n\n</head>\n<body>\n\n<div class=\"invoice\">\n\n<div class=\"header\">\n\n<div class=\"company\">\n\n<h1>AutoNode Technologies</h1>\n\n<p class=\"tagline\">\n\nAI Automations & AI Agents for Business\n\n</p>\n\n<p>\n📧 contact@yourcompany.example\n</p>\n\n<p>\n🌐 support@yourcompany.example\n</p>\n\n<p>\n📞 +91 90000 00000\n</p>\n\n</div>\n\n<div class=\"invoice-info\">\n\n<div class=\"badge\">\n\nInvoice\n\n</div>\n\n<h2>INVOICE</h2>\n\n<p>\n\n<strong>Invoice No :</strong>\n\n{{ $json.invoice_number }}\n\n</p>\n\n<p>\n\n<strong>Invoice Date :</strong>\n\n{{ $json.Date }}\n\n</p>\n\n<p>\n\n<strong>Due Date :</strong>\n\n{{ $json.Due_Date }}\n\n</p>\n\n</div>\n\n</div>\n\n<div class=\"section\">\n<div class=\"row\">\n\n<div class=\"box\">\n\n<h3>Bill To</h3>\n\n<p><strong>{{ $json.client_name }}</strong></p>\n\n<p>{{ $json.client_email }}</p>\n\n</div>\n\n<div class=\"box\">\n\n<h3>Invoice Details</h3>\n\n<p><strong>Service :</strong> {{ $json.service }}</p>\n\n<p><strong>Status :</strong> Pending</p>\n\n<p><strong>Currency :</strong> INR (₹)</p>\n\n</div>\n\n</div>\n\n<table>\n\n<thead>\n\n<tr>\n\n<th>Description</th>\n\n<th style=\"text-align:center;\">Qty</th>\n\n<th style=\"text-align:right;\">Unit Price</th>\n\n<th style=\"text-align:right;\">Amount</th>\n\n</tr>\n\n</thead>\n\n<tbody>\n\n<tr>\n\n<td>\n\n<strong>{{ $json.service }}</strong>\n\n<br>\n\n<span style=\"font-size:13px;color:#777;\">\n\nProfessional AI Automation & Development Service\n\n</span>\n\n</td>\n\n<td style=\"text-align:center;\">\n\n1\n\n</td>\n\n<td class=\"amount\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n<td class=\"amount\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n</tr>\n\n</tbody>\n\n</table>\n<div class=\"summary\">\n\n<table>\n\n<tr>\n\n<td class=\"label\">\n\nSubtotal\n\n</td>\n\n<td class=\"value\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n</tr>\n\n<tr>\n\n<td class=\"label\">\n\nGST (18%)\n\n</td>\n\n<td class=\"value\">\n\n₹ {{ $json.GST }}\n\n</td>\n\n</tr>\n\n<tr class=\"total-row\">\n\n<td>\n\nGrand Total\n\n</td>\n\n<td style=\"text-align:right;\">\n\n₹ {{ $json.Total }}\n\n</td>\n\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"payment\">\n\n<h3>Payment Terms</h3>\n\n<ul>\n\n<li>Payment is due within 15 days from the invoice date.</li>\n\n<li>Please mention the Invoice Number while making payment.</li>\n\n<li>Late payments may incur additional charges.</li>\n\n<li>This invoice is generated automatically by AutoNode.</li>\n\n</ul>\n\n</div>\n\n<div class=\"bank\">\n\n<div class=\"bank-card\">\n\n<h4>Payment Methods</h4>\n\n<p>✔ Bank Transfer</p>\n\n<p>✔ UPI</p>\n\n<p>✔ NEFT / IMPS / RTGS</p>\n\n</div>\n\n<div class=\"bank-card\">\n\n<h4>Support</h4>\n\n<p>📧 contact@yourcompany.example</p>\n\n<p>📞 +91 90000 00000</p>\n\n<p>AI Automation Support</p>\n\n</div>\n\n</div>\n\n<div class=\"note\">\n\n<strong>Note:</strong>\n\nThank you for choosing <strong>AutoNode Technologies</strong>.\nWe appreciate your business and look forward to working with you again.\n\n</div>\n\n</div>\n\n<div class=\"footer\">\n\n<h3>Thank You ❤️</h3>\n\n<p>AutoNode Technologies</p>\n\n<p>AI Automations & AI Agents for Business</p>\n\n<p>Invoice generated automatically by AutoNode AI.</p>\n\n<small>\n\n© 2026 AutoNode Technologies. All Rights Reserved.\n\n</small>\n\n</div>\n\n</div>\n\n</body>\n\n</html>"
-      },
-      "type": "n8n-nodes-base.html",
-      "typeVersion": 1.2,
-      "position": [
-        1472,
-        -640
-      ],
-      "id": "21e5a12e-2fbd-4795-ad8e-592eea17277c",
-      "name": "Generate Invoice HTML"
-    },
-    {
-      "parameters": {
-        "html": "={{ $json.html }}",
-        "additionalOptions": {
-          "filename": "={{$('Calculate GST & Total').item.json.invoice_number}}.pdf"
-        }
-      },
-      "type": "n8n-nodes-pdfbolt.pdfBolt",
-      "typeVersion": 1,
-      "position": [
-        1696,
-        -640
-      ],
-      "id": "a1cde7ba-d66c-4319-98e7-6b0faa99eee3",
-      "name": "Generate Invoice PDF",
-      "credentials": {
-        "pdfBoltApi": {
-          "id": "FAKE_PDFBOLT_CRED_ID",
-          "name": "PDFBolt account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "name": "={{\n$('Calculate GST & Total').item.json.invoice_number\n+\"_\"+\n\n$('Calculate GST & Total').item.json.client_name.replace(/[^a-zA-Z0-9]/g,\"_\")\n\n+\".pdf\"\n}}",
-        "driveId": {
-          "__rl": true,
-          "mode": "list",
-          "value": "My Drive"
-        },
-        "folderId": {
-          "__rl": true,
-          "value": "FAKE_DRIVE_FOLDER_ID",
-          "mode": "list",
-          "cachedResultName": "Invoices",
-          "cachedResultUrl": "https://drive.google.com/drive/folders/FAKE_DRIVE_FOLDER_ID"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        1920,
-        -736
-      ],
-      "id": "79e20ae0-3eaf-40a8-a472-92e6d9e6772e",
-      "name": "Upload PDF to Google Drive",
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "FAKE_GDRIVE_CRED_ID",
-          "name": "Google Drive account"
-        }
-      },
-      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -305,38 +348,48 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "FAKE_GOOGLE_SHEET_ID_1234567890",
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/FAKE_GOOGLE_SHEET_ID_1234567890/edit?usp=drivesdk"
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
         },
         "sheetName": {
           "__rl": true,
-          "value": 0,
+          "value": "REPLACE_WITH_YOUR_SHEET_TAB",
           "mode": "list",
-          "cachedResultName": "Invoice Ragister",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/FAKE_GOOGLE_SHEET_ID_1234567890/edit#gid=0"
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "client_name": "={{ $('Calculate GST & Total').item.json.client_name }}",
-            "invoice_number": "={{ $('Calculate GST & Total').item.json.invoice_number }}",
-            "client_email": "={{ $('Calculate GST & Total').item.json.client_email }}",
-            "service": "={{ $('Calculate GST & Total').item.json.service }}",
-            "amount": "={{ $('Calculate GST & Total').item.json.amount }}",
-            "Date": "={{ $('Calculate GST & Total').item.json.Date }}",
-            "Due_Date": "={{ $('Calculate GST & Total').item.json.Due_Date }}",
-            "GST": "={{ $('Calculate GST & Total').item.json.GST }}",
-            "Total": "={{ $('Calculate GST & Total').item.json.Total }}",
-            "Status": "Sent",
-            "Pdf Link": "={{ $('Upload PDF to Google Drive').item.json.webViewLink }}",
-            "Created_At": "={{ $now }}"
+            "invoice_number": "={{ $('Generate Invoice Number').item.json.invoice_number }}",
+            "client_name": "={{ $('Normalize Invoice Request').item.json.client_name }}",
+            "client_email": "={{ $('Normalize Invoice Request').item.json.client_email }}",
+            "service": "={{ $('Normalize Invoice Request').item.json.service }}",
+            "amount": "={{ $('Normalize Invoice Request').item.json.amount }}",
+            "Date": "={{ $('Generate Invoice Dates').item.json.Date }}",
+            "Due_Date": "={{ $('Generate Invoice Dates').item.json.Due_Date }}",
+            "GST": "={{ $('Calculate Tax and Invoice Total').item.json.GST }}",
+            "Total": "={{ $('Calculate Tax and Invoice Total').item.json.Total }}",
+            "Status": "Processing",
+            "Created_At": "={{ $('Normalize Invoice Request').item.json.created_at }}",
+            "request_id": "={{ $('Normalize Invoice Request').item.json.request_id }}"
           },
           "matchingColumns": [
-            "invoice_number"
+            "request_id"
           ],
           "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
             {
               "id": "invoice_number",
               "displayName": "invoice_number",
@@ -461,188 +514,363 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         },
-        "options": {}
+        "options": {
+          "cellFormat": "RAW"
+        }
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2144,
-        -736
+        -1504,
+        576
       ],
-      "id": "4d9bf95e-4c69-475c-9466-51463411f1a0",
-      "name": "Save Invoice Record",
+      "id": "4833a3ed-b6e2-4412-b8b4-e4caa289342f",
+      "name": "Reserve Invoice Request in Google Sheets",
       "retryOnFail": true,
-      "waitBetweenTries": 3000,
-      "credentials": {
-        "googleApi": {
-          "id": "FAKE_GOOGLE_CRED_ID",
-          "name": "Google Sheets account"
-        }
-      }
+      "waitBetweenTries": 2500,
+      "maxTries": 3,
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Reserve Request ID before PDF and email side effects so duplicate deliveries are blocked during long rendering/upload operations."
     },
     {
       "parameters": {
-        "sendTo": "={{ $('Calculate GST & Total').item.json.client_email }}",
-        "subject": "=Invoice {{$('Calculate GST & Total').item.json.invoice_number}}",
-        "message": "=Hi,please find attached your invoice {{ $('Calculate GST & Total').item.json.invoice_number }}",
-        "options": {
-          "appendAttribution": false,
-          "attachmentsUi": {
-            "attachmentsBinary": [
-              {}
-            ]
-          },
-          "bccList": "your-email@example.com"
-        }
-      },
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [
-        2144,
-        -544
-      ],
-      "id": "f94c724c-16d1-43ad-b0a7-51914f1d0a65",
-      "name": "Send Invoice Email",
-      "webhookId": "00000000-0000-0000-0000-000000000006",
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "FAKE_GMAIL_CRED_ID",
-          "name": "Gmail account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "select": "channel",
-        "channelId": {
-          "__rl": true,
-          "value": "C0000000000",
-          "mode": "list",
-          "cachedResultName": "your-channel-name"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b2012f5-f6d6-421b-b8d5-f3e5ed352cb9",
+              "name": "safe_client_name",
+              "value": "={{ String($json.client_name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+              "type": "string"
+            },
+            {
+              "id": "d63cfeca-8034-447f-96f2-a87f285b326a",
+              "name": "safe_client_email",
+              "value": "={{ String($json.client_email).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+              "type": "string"
+            },
+            {
+              "id": "18cbdf0b-9889-4dbc-9389-996a8be11770",
+              "name": "safe_service",
+              "value": "={{ String($json.service).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+              "type": "string"
+            },
+            {
+              "id": "ba6c4e05-9e52-4e17-9135-9032d06fe361",
+              "name": "gst_rate_percent",
+              "value": "={{ $('Normalize Invoice Request').item.json.gst_rate_percent }}",
+              "type": "string"
+            }
+          ]
         },
-        "text": "=💰 *New Invoice Generated Successfully*  ━━━━━━━━━━━━━━━━━━━━━━  📄 *Invoice Number* {{$('Calculate GST & Total').item.json.invoice_number}}  👤 *Client* {{$('Prepare Invoice Data').item.json.client_name}}  📧 *Email* {{$('Prepare Invoice Data').item.json.client_email}}  🛠 *Service* {{$('Prepare Invoice Data').item.json.service}}  💵 *Subtotal* ₹ {{$('Prepare Invoice Data').item.json.amount}}  🧾 *GST* ₹ {{ $('Calculate GST & Total').item.json.GST }}  💰 *Grand Total* ₹ {{ $('Calculate GST & Total').item.json.Total }}  📅 *Due Date* {{ $('Calculate GST & Total').item.json.Due_Date }} 📂 *Invoice PDF* {{ $('Upload PDF to Google Drive').item.json.webViewLink }} Execution Time: {{$now.toFormat(\"dd LLL yyyy HH:mm:ss\")}} ━━━━━━━━━━━━━━━━━━━━━━  ✅ Google Drive Uploaded  ✅ Google Sheet Updated  ✅ Invoice Email Sent  🤖 AutoNode Invoice Automation",
-        "otherOptions": {}
-      },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.4,
-      "position": [
-        2592,
-        -640
-      ],
-      "id": "a5c75615-5641-4bb5-8958-603841bb2f87",
-      "name": "Send Slack Notification",
-      "webhookId": "00000000-0000-0000-0000-000000000007",
-      "credentials": {
-        "slackApi": {
-          "id": "FAKE_SLACK_CRED_ID",
-          "name": "Slack account"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\n  \"success\": false,\n  \"message\": \"Missing or invalid invoice data.\"\n}",
-        "options": {
-          "responseCode": 400
-        }
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
-      "position": [
-        352,
-        -448
-      ],
-      "id": "348eb844-8b03-4e9f-81eb-bfc00f469521",
-      "name": "Return Validation Error"
-    },
-    {
-      "parameters": {
-        "content": "Receives invoice data from external API\nand validates required fields.",
-        "width": 544
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -432,
-        -752
-      ],
-      "id": "30daeb7c-8be3-40e6-aada-46063366c372",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "content": "Creates invoice number,\ncalculates GST,\ngenerates dates.",
-        "width": 976
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        320,
-        -880
-      ],
-      "id": "7e086e19-c61d-4e4a-95bb-c14ddcab0b9f",
-      "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "content": "Creates HTML invoice\nand converts it into PDF.",
-        "width": 288
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1456,
-        -848
-      ],
-      "id": "fa33a6ec-89dc-416c-9515-2d91c5604ef9",
-      "name": "Sticky Note2"
-    },
-    {
-      "parameters": {
-        "content": "Uploads PDF to Drive\nand stores metadata.",
-        "width": 544
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1888,
-        -944
-      ],
-      "id": "15892182-d42f-48c2-a865-bada3e138522",
-      "name": "Sticky Note3"
-    },
-    {
-      "parameters": {
-        "content": "Email client\nNotify Slack\nReturn API response.",
-        "width": 560
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        2496,
-        -816
-      ],
-      "id": "e9cfe4c0-1d3f-4cbc-9fb6-6d578e315d3a",
-      "name": "Sticky Note4"
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Invoice generated successfully.\",\n  \"data\": {\n    \"invoice_number\": \"{{ $('Calculate GST & Total').item.json.invoice_number }}\",\n    \"client_name\": \"{{ $('Calculate GST & Total').item.json.client_name }}\",\n    \"client_email\": \"{{ $('Calculate GST & Total').item.json.client_email }}\",\n    \"service\": \"{{ $('Calculate GST & Total').item.json.service }}\",\n    \"subtotal\": {{ Number($('Calculate GST & Total').item.json.amount) }},\n    \"gst\": {{ Number($('Calculate GST & Total').item.json.GST) }},\n    \"total\": {{ Number($('Calculate GST & Total').item.json.Total) }},\n    \"invoice_date\": \"{{ $('Calculate GST & Total').item.json.Date }}\",\n    \"due_date\": \"{{ $('Calculate GST & Total').item.json.Due_Date }}\",\n    \"status\": \"Pending\",\n    \"pdf_url\": \"{{ $('Upload PDF to Google Drive').item.json.webViewLink }}\",\n    \"created_at\": \"{{ $now.toISO() }}\"\n  }\n}",
+        "includeOtherFields": true,
         "options": {}
       },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        2816,
-        -640
+        -1280,
+        256
       ],
-      "id": "af371555-dcbf-4bf4-8e0d-498c76c6b908",
-      "name": "Respond to Webhook"
+      "id": "c56643c5-42a2-4760-a023-20bc84cc1008",
+      "name": "Escape Invoice Text for HTML",
+      "notesInFlow": true,
+      "notes": "Genrate Dates"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<meta name=\"viewport\"\ncontent=\"width=device-width, initial-scale=1.0\">\n\n<title>\nInvoice | Example Automation Studio\n</title>\n\n\n\n<style>\n\n*{\nmargin:0;\npadding:0;\nbox-sizing:border-box;\n}\n\nbody{\n\nfont-family:Arial,sans-serif;\n\nbackground:#eef3f7;\n\npadding:40px;\n\ncolor:#2d3436;\n\n}\n\n.invoice{\n\nwidth:900px;\n\nmargin:auto;\n\nbackground:#fff;\n\nborder-radius:16px;\n\noverflow:hidden;\n\nbox-shadow:\n0 15px 45px rgba(0,0,0,.12);\n\n}\n.header{\n\nbackground:linear-gradient(\n135deg,\n#0F6E56,\n#1D9E75\n);\n\ncolor:#fff;\n\npadding:45px;\n\ndisplay:flex;\n\njustify-content:space-between;\n\nalign-items:flex-start;\n\n}\n\n.company{\n\nwidth:60%;\n\n}\n\n.company h1{\n\nfont-size:36px;\n\nfont-weight:700;\n\nmargin-bottom:10px;\n\nletter-spacing:.5px;\n\n}\n\n.company .tagline{\n\nfont-size:15px;\n\nopacity:.95;\n\nmargin-bottom:20px;\n\n}\n\n.company p{\n\nfont-size:14px;\n\nmargin:6px 0;\n\nline-height:1.6;\n\n}\n\n.invoice-info{\n\ntext-align:right;\n\n}\n\n.invoice-info h2{\n\nfont-size:42px;\n\nletter-spacing:2px;\n\nmargin-bottom:20px;\n\n}\n\n.badge{\n\ndisplay:inline-block;\n\nbackground:#ffffff22;\n\npadding:8px 18px;\n\nborder-radius:30px;\n\nfont-size:13px;\n\nfont-weight:600;\n\nmargin-bottom:20px;\n\n}\n\n.invoice-info p{\n\nfont-size:14px;\n\nmargin:8px 0;\n\n}\n\n.section{\n\npadding:40px;\n\n}\n\n.row{\n\ndisplay:flex;\n\njustify-content:space-between;\n\ngap:40px;\n\nmargin-bottom:40px;\n\n}\n\n.box{\n\nflex:1;\n\nbackground:#fafafa;\n\npadding:25px;\n\nborder-radius:12px;\n\nborder:1px solid #ececec;\n\n}\n\n.box h3{\n\ncolor:#0F6E56;\n\nfont-size:18px;\n\nmargin-bottom:18px;\n\nborder-bottom:2px solid #1D9E75;\n\npadding-bottom:8px;\n\ndisplay:inline-block;\n\n}\n\n.box p{\n\nfont-size:15px;\n\nmargin:10px 0;\n\nline-height:1.7;\n\n}\ntable{\n\nwidth:100%;\n\nborder-collapse:collapse;\n\nmargin-top:20px;\n\nborder-radius:12px;\n\noverflow:hidden;\n\n}\n\nthead{\n\nbackground:#0F6E56;\n\ncolor:#fff;\n\n}\n\nth{\n\npadding:16px;\n\nfont-size:15px;\n\nfont-weight:600;\n\ntext-align:left;\n\n}\n\ntd{\n\npadding:16px;\n\nfont-size:15px;\n\nborder-bottom:1px solid #ececec;\n\n}\n\ntbody tr:nth-child(even){\n\nbackground:#fafafa;\n\n}\n\ntbody tr:hover{\n\nbackground:#f2fbf8;\n\ntransition:.25s;\n\n}\n\n.amount{\n\ntext-align:right;\n\nfont-weight:600;\n\n}\n\n.summary{\n\nwidth:360px;\n\nmargin-left:auto;\n\nmargin-top:35px;\n\nbackground:#fafafa;\n\nborder:1px solid #e7e7e7;\n\nborder-radius:12px;\n\npadding:22px;\n\n}\n\n.summary table{\n\nmargin:0;\n\n}\n\n.summary td{\n\npadding:12px 0;\n\nborder:none;\n\nfont-size:15px;\n\n}\n\n.summary tr:not(:last-child){\n\nborder-bottom:1px dashed #ddd;\n\n}\n\n.summary .label{\n\nfont-weight:500;\n\ncolor:#555;\n\n}\n\n.summary .value{\n\ntext-align:right;\n\nfont-weight:600;\n\n}\n\n.total-row{\n\nborder-top:2px solid #1D9E75;\n\n}\n\n.total-row td{\n\npadding-top:18px;\n\nfont-size:22px;\n\nfont-weight:700;\n\ncolor:#0F6E56;\n\n}\n.payment{\n\nmargin-top:45px;\n\npadding:28px;\n\nbackground:#F5FBF9;\n\nborder-left:6px solid #1D9E75;\n\nborder-radius:10px;\n\n}\n\n.payment h3{\n\nfont-size:20px;\n\ncolor:#0F6E56;\n\nmargin-bottom:18px;\n\n}\n\n.payment ul{\n\nmargin-left:20px;\n\nline-height:2;\n\nfont-size:15px;\n\n}\n\n.bank{\n\nmargin-top:30px;\n\ndisplay:grid;\n\ngrid-template-columns:1fr 1fr;\n\ngap:20px;\n\n}\n\n.bank-card{\n\nbackground:#ffffff;\n\nborder:1px solid #e5e5e5;\n\npadding:20px;\n\nborder-radius:12px;\n\n}\n\n.bank-card h4{\n\ncolor:#0F6E56;\n\nmargin-bottom:12px;\n\nfont-size:17px;\n\n}\n\n.bank-card p{\n\nmargin:8px 0;\n\nfont-size:14px;\n\nline-height:1.7;\n\n}\n\n.note{\n\nmargin-top:35px;\n\nbackground:#FFF8E8;\n\nborder-left:5px solid #F4B400;\n\npadding:18px;\n\nborder-radius:10px;\n\nfont-size:14px;\n\nline-height:1.8;\n\n}\n\n.footer{\n\nmargin-top:40px;\n\nbackground:#0F6E56;\n\ncolor:#fff;\n\npadding:35px;\n\ntext-align:center;\n\n}\n\n.footer h3{\n\nfont-size:24px;\n\nmargin-bottom:12px;\n\n}\n\n.footer p{\n\nmargin:8px 0;\n\nfont-size:14px;\n\nopacity:.95;\n\nline-height:1.8;\n\n}\n\n.footer small{\n\ndisplay:block;\n\nmargin-top:20px;\n\nopacity:.75;\n\nfont-size:13px;\n\n}\n\n@media print{\n\nbody{\n\nbackground:#fff;\n\npadding:0;\n\n}\n\n.invoice{\n\nwidth:100%;\n\nbox-shadow:none;\n\nborder-radius:0;\n\n}\n\n}\n</style>\n\n</head>\n<body>\n\n<div class=\"invoice\">\n\n<div class=\"header\">\n\n<div class=\"company\">\n\n<h1>Example Automation Studio</h1>\n\n<p class=\"tagline\">\n\nAI Automations & AI Agents for Business\n\n</p>\n\n<p>\n📧 billing@example.com\n</p>\n\n<p>\n🌐 billing@example.com\n</p>\n\n<p>\n📞 [Business phone]\n</p>\n\n</div>\n\n<div class=\"invoice-info\">\n\n<div class=\"badge\">\n\nInvoice\n\n</div>\n\n<h2>INVOICE</h2>\n\n<p>\n\n<strong>Invoice No :</strong>\n\n{{ $json.invoice_number }}\n\n</p>\n\n<p>\n\n<strong>Invoice Date :</strong>\n\n{{ $json.Date }}\n\n</p>\n\n<p>\n\n<strong>Due Date :</strong>\n\n{{ $json.Due_Date }}\n\n</p>\n\n</div>\n\n</div>\n\n<div class=\"section\">\n<div class=\"row\">\n\n<div class=\"box\">\n\n<h3>Bill To</h3>\n\n<p><strong>{{ $json.safe_client_name }}</strong></p>\n\n<p>{{ $json.safe_client_email }}</p>\n\n</div>\n\n<div class=\"box\">\n\n<h3>Invoice Details</h3>\n\n<p><strong>Service :</strong> {{ $json.safe_service }}</p>\n\n<p><strong>Status :</strong> Pending</p>\n\n<p><strong>Currency :</strong> INR (₹)</p>\n\n</div>\n\n</div>\n\n<table>\n\n<thead>\n\n<tr>\n\n<th>Description</th>\n\n<th style=\"text-align:center;\">Qty</th>\n\n<th style=\"text-align:right;\">Unit Price</th>\n\n<th style=\"text-align:right;\">Amount</th>\n\n</tr>\n\n</thead>\n\n<tbody>\n\n<tr>\n\n<td>\n\n<strong>{{ $json.safe_service }}</strong>\n\n<br>\n\n<span style=\"font-size:13px;color:#777;\">\n\nProfessional AI Automation & Development Service\n\n</span>\n\n</td>\n\n<td style=\"text-align:center;\">\n\n1\n\n</td>\n\n<td class=\"amount\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n<td class=\"amount\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n</tr>\n\n</tbody>\n\n</table>\n<div class=\"summary\">\n\n<table>\n\n<tr>\n\n<td class=\"label\">\n\nSubtotal\n\n</td>\n\n<td class=\"value\">\n\n₹ {{ $json.amount }}\n\n</td>\n\n</tr>\n\n<tr>\n\n<td class=\"label\">\n\nGST ({{ $json.gst_rate_percent }}%)\n\n</td>\n\n<td class=\"value\">\n\n₹ {{ $json.GST }}\n\n</td>\n\n</tr>\n\n<tr class=\"total-row\">\n\n<td>\n\nGrand Total\n\n</td>\n\n<td style=\"text-align:right;\">\n\n₹ {{ $json.Total }}\n\n</td>\n\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"payment\">\n\n<h3>Payment Terms</h3>\n\n<ul>\n\n<li>Payment is due within 15 days from the invoice date.</li>\n\n<li>Please mention the Invoice Number while making payment.</li>\n\n\n\n<li>This invoice is generated automatically by Example Automation Studio.</li>\n\n</ul>\n\n</div>\n\n<div class=\"bank\">\n\n<div class=\"bank-card\">\n\n<h4>Payment Methods</h4>\n\n<p>✔ Bank Transfer</p>\n\n<p>✔ UPI</p>\n\n<p>✔ NEFT / IMPS / RTGS</p>\n\n</div>\n\n<div class=\"bank-card\">\n\n<h4>Support</h4>\n\n<p>📧 billing@example.com</p>\n\n<p>📞 [Business phone]</p>\n\n<p>AI Automation Support</p>\n\n</div>\n\n</div>\n\n<div class=\"note\">\n\n<strong>Note:</strong>\n\nThank you for choosing <strong>Example Automation Studio</strong>.\nWe appreciate your business and look forward to working with you again.\n\n</div>\n\n</div>\n\n<div class=\"footer\">\n\n<h3>Thank You ❤️</h3>\n\n<p>Example Automation Studio</p>\n\n<p>AI Automations & AI Agents for Business</p>\n\n<p>Invoice generated automatically by Example Automation Studio AI.</p>\n\n<small>\n\n© 2026 Example Automation Studio. All Rights Reserved.\n\n</small>\n\n</div>\n\n</div>\n\n</body>\n\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -1056,
+        256
+      ],
+      "id": "d6363ce5-2e04-4bec-958f-5173e1e8f79b",
+      "name": "Render Invoice HTML",
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "User-provided text is HTML-escaped before interpolation. Verify all business/legal invoice particulars before use."
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.html }}",
+        "additionalOptions": {
+          "format": "A4",
+          "printBackground": true,
+          "filename": "={{ $('Generate Invoice Number').item.json.invoice_number + '.pdf' }}"
+        }
+      },
+      "type": "n8n-nodes-pdfbolt.pdfBolt",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        400
+      ],
+      "id": "96bf5951-7912-4cbb-909e-d630185a2a70",
+      "name": "Generate Invoice PDF",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "61d13a9b-256f-412d-9c8b-b2d7ae53a4fe",
+              "leftValue": "={{ Boolean($binary?.data) && $binary.data.mimeType === 'application/pdf' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -608,
+        576
+      ],
+      "id": "b6c1eabc-bea9-43a0-b082-1b1db434576e",
+      "name": "Validate Generated PDF",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Generate Invoice Number').item.json.invoice_number + '.pdf' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -384,
+        768
+      ],
+      "id": "5634aa5a-a50f-4aaf-aebe-8fa7c32e0794",
+      "name": "Upload Invoice PDF to Drive",
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Drive upload must succeed before a pending invoice record is saved and before email is reached."
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_TAB",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $('Generate Invoice Number').item.json.invoice_number }}",
+            "client_name": "={{ $('Normalize Invoice Request').item.json.client_name }}",
+            "client_email": "={{ $('Normalize Invoice Request').item.json.client_email }}",
+            "service": "={{ $('Normalize Invoice Request').item.json.service }}",
+            "amount": "={{ $('Normalize Invoice Request').item.json.amount }}",
+            "Date": "={{ $('Generate Invoice Dates').item.json.Date }}",
+            "Due_Date": "={{ $('Generate Invoice Dates').item.json.Due_Date }}",
+            "GST": "={{ $('Calculate Tax and Invoice Total').item.json.GST }}",
+            "Total": "={{ $('Calculate Tax and Invoice Total').item.json.Total }}",
+            "Status": "Pending Email",
+            "Pdf Link": "={{ $('Upload Invoice PDF to Drive').item.json.webViewLink }}",
+            "Created_At": "={{ $('Normalize Invoice Request').item.json.created_at }}",
+            "request_id": "={{ $('Normalize Invoice Request').item.json.request_id }}"
+          },
+          "matchingColumns": [
+            "request_id"
+          ],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due_Date",
+              "displayName": "Due_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "GST",
+              "displayName": "GST",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pdf Link",
+              "displayName": "Pdf Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        864
+      ],
+      "id": "406a8a05-3f05-486c-a9a1-bb6375e77507",
+      "name": "Update Invoice Record - Pending Email",
+      "retryOnFail": true,
+      "waitBetweenTries": 2500,
+      "maxTries": 3,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -653,11 +881,868 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2368,
-        -640
+        288,
+        528
       ],
-      "id": "3c595788-7486-4b39-b99b-629b5046af80",
-      "name": "Merge Invoice Success Data"
+      "id": "1908f2ac-bb2d-4c49-880e-047b35283ea4",
+      "name": "Reattach PDF After Drive and Sheet"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Normalize Invoice Request').item.json.client_email }}",
+        "subject": "=Invoice {{ $('Generate Invoice Number').item.json.invoice_number }}",
+        "emailType": "text",
+        "message": "=Hi {{ $('Normalize Invoice Request').item.json.client_name }},\n\nPlease find attached invoice {{ $('Generate Invoice Number').item.json.invoice_number }}.\n\nSubtotal: ₹{{ $('Normalize Invoice Request').item.json.amount }}\nGST ({{ $('Normalize Invoice Request').item.json.gst_rate_percent }}%): ₹{{ $('Calculate Tax and Invoice Total').item.json.GST }}\nTotal: ₹{{ $('Calculate Tax and Invoice Total').item.json.Total }}\nDue date: {{ $('Generate Invoice Dates').item.json.Due_Date }}\n\nRegards,\nExample Automation Studio",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        528
+      ],
+      "id": "25f52373-4b33-4c37-8aed-341ff66b00d5",
+      "name": "Email Invoice PDF to Client",
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Sends a generated invoice PDF to the submitted client email. This is an external financial communication; validate the request source, customer, amount, tax treatment, and recipient before enabling in production."
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_TAB",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $('Generate Invoice Number').item.json.invoice_number }}",
+            "client_name": "={{ $('Normalize Invoice Request').item.json.client_name }}",
+            "client_email": "={{ $('Normalize Invoice Request').item.json.client_email }}",
+            "service": "={{ $('Normalize Invoice Request').item.json.service }}",
+            "amount": "={{ $('Normalize Invoice Request').item.json.amount }}",
+            "Date": "={{ $('Generate Invoice Dates').item.json.Date }}",
+            "Due_Date": "={{ $('Generate Invoice Dates').item.json.Due_Date }}",
+            "GST": "={{ $('Calculate Tax and Invoice Total').item.json.GST }}",
+            "Total": "={{ $('Calculate Tax and Invoice Total').item.json.Total }}",
+            "Status": "Sent",
+            "Pdf Link": "={{ $('Upload Invoice PDF to Drive').item.json.webViewLink }}",
+            "Created_At": "={{ $('Normalize Invoice Request').item.json.created_at }}",
+            "request_id": "={{ $('Normalize Invoice Request').item.json.request_id }}"
+          },
+          "matchingColumns": [
+            "request_id"
+          ],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due_Date",
+              "displayName": "Due_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "GST",
+              "displayName": "GST",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pdf Link",
+              "displayName": "Pdf Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        432
+      ],
+      "id": "3e5ac43a-28b7-4a3e-b006-bfcfeca6216b",
+      "name": "Mark Invoice Sent in Google Sheets",
+      "retryOnFail": true,
+      "waitBetweenTries": 2500,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_TAB",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $('Generate Invoice Number').item.json.invoice_number }}",
+            "client_name": "={{ $('Normalize Invoice Request').item.json.client_name }}",
+            "client_email": "={{ $('Normalize Invoice Request').item.json.client_email }}",
+            "service": "={{ $('Normalize Invoice Request').item.json.service }}",
+            "amount": "={{ $('Normalize Invoice Request').item.json.amount }}",
+            "Date": "={{ $('Generate Invoice Dates').item.json.Date }}",
+            "Due_Date": "={{ $('Generate Invoice Dates').item.json.Due_Date }}",
+            "GST": "={{ $('Calculate Tax and Invoice Total').item.json.GST }}",
+            "Total": "={{ $('Calculate Tax and Invoice Total').item.json.Total }}",
+            "Status": "Email Failed - Manual Check",
+            "Pdf Link": "={{ $('Upload Invoice PDF to Drive').item.json.webViewLink }}",
+            "Created_At": "={{ $('Normalize Invoice Request').item.json.created_at }}",
+            "request_id": "={{ $('Normalize Invoice Request').item.json.request_id }}"
+          },
+          "matchingColumns": [
+            "request_id"
+          ],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due_Date",
+              "displayName": "Due_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "GST",
+              "displayName": "GST",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pdf Link",
+              "displayName": "Pdf Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        624
+      ],
+      "id": "0cd7d477-b902-45c9-9172-bd0425a87759",
+      "name": "Mark Email Failed for Manual Check",
+      "retryOnFail": true,
+      "waitBetweenTries": 2500,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, status: 'sent', request_id: $('Normalize Invoice Request').item.json.request_id, invoice_number: $('Generate Invoice Number').item.json.invoice_number, total: $('Calculate Tax and Invoice Total').item.json.Total } }}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1184,
+        880
+      ],
+      "id": "22bafd8e-d786-4b8c-8d47-1253013422e2",
+      "name": "Return Invoice Success"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, status: 'email_manual_check', request_id: $('Normalize Invoice Request').item.json.request_id, invoice_number: $('Generate Invoice Number').item.json.invoice_number, message: 'Invoice is stored. Check Gmail and the Sheet before retrying.' } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1408,
+        1072
+      ],
+      "id": "76608c77-76d8-4904-b99f-d3b9c5d2eb57",
+      "name": "Return Email Manual Check"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, status: 'persistence_failed', request_id: $('Normalize Invoice Request').item.json.request_id, message: 'Check the execution and invoice row before retrying.' } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1408,
+        672
+      ],
+      "id": "18245794-acad-43cc-8fcd-077a7fb0ae37",
+      "name": "Return Invoice Persistence Error"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, status: 'duplicate_check_unavailable', request_id: $('Normalize Invoice Request').item.json.request_id, message: 'Invoice was not processed because the duplicate check failed.' } }}",
+        "options": {
+          "responseCode": 503
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -2400,
+        768
+      ],
+      "id": "16a722d0-7da1-4741-b930-90cf547c2c66",
+      "name": "Return Duplicate Check Error"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, status: 'generation_failed', request_id: $('Normalize Invoice Request').item.json.request_id, message: 'Invoice rendering, PDF generation/validation, or Drive storage failed; no email was sent.' } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        288,
+        64
+      ],
+      "id": "04668521-8d69-42c7-98d6-dca654b5b0d5",
+      "name": "Return PDF Generation Error"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import"
+        },
+        "text": "=Invoice {{ $('Generate Invoice Number').item.json.invoice_number }} sent. Status: Sent. Client details omitted.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1408,
+        880
+      ],
+      "id": "b7bbae66-8b48-40fe-aac5-0ad3235e211a",
+      "name": "Notify Invoice Sent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import"
+        },
+        "text": "=Invoice {{ $('Generate Invoice Number').item.json.invoice_number }} email send failed or timed out. Check Gmail and execution {{ $execution.id }} before retrying.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1184,
+        1072
+      ],
+      "id": "66e65df9-7ace-4410-9729-b0f6a6bbfff3",
+      "name": "Alert Gmail Manual Check",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import"
+        },
+        "text": "=Invoice {{ $('Generate Invoice Number').item.json.invoice_number }} Google Sheets write/status update failed. Execution {{ $execution.id }}. Reconcile before retrying.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1184,
+        672
+      ],
+      "id": "a323592d-c263-4307-81f9-c6bf0bdea4f0",
+      "name": "Alert Invoice Sheet Failure",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import"
+        },
+        "text": "=Invoice request duplicate lookup failed. No invoice email was sent. Execution {{ $execution.id }}.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        -2624,
+        768
+      ],
+      "id": "e10f94b5-f7e0-4bad-9b8a-1dd6104fd5c5",
+      "name": "Alert Duplicate Lookup Failure",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import"
+        },
+        "text": "=Invoice {{ $('Generate Invoice Number').item.json.invoice_number }} failed during HTML render, PDF generation/validation, or Drive upload. No client email should be sent. Execution {{ $execution.id }}.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        64,
+        64
+      ],
+      "id": "ea8518fa-c87e-4edf-acae-3e3e0e0688da",
+      "name": "Alert PDF Generation Failure",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_TAB",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_number": "={{ $('Generate Invoice Number').item.json.invoice_number }}",
+            "client_name": "={{ $('Normalize Invoice Request').item.json.client_name }}",
+            "client_email": "={{ $('Normalize Invoice Request').item.json.client_email }}",
+            "service": "={{ $('Normalize Invoice Request').item.json.service }}",
+            "amount": "={{ $('Normalize Invoice Request').item.json.amount }}",
+            "Date": "={{ $('Generate Invoice Dates').item.json.Date }}",
+            "Due_Date": "={{ $('Generate Invoice Dates').item.json.Due_Date }}",
+            "GST": "={{ $('Calculate Tax and Invoice Total').item.json.GST }}",
+            "Total": "={{ $('Calculate Tax and Invoice Total').item.json.Total }}",
+            "Status": "Failed - Manual Review",
+            "Created_At": "={{ $('Normalize Invoice Request').item.json.created_at }}",
+            "request_id": "={{ $('Normalize Invoice Request').item.json.request_id }}"
+          },
+          "matchingColumns": [
+            "request_id"
+          ],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_name",
+              "displayName": "client_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client_email",
+              "displayName": "client_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due_Date",
+              "displayName": "Due_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "GST",
+              "displayName": "GST",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pdf Link",
+              "displayName": "Pdf Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        144
+      ],
+      "id": "34879c8d-f35e-481f-b583-2bb607bf6e58",
+      "name": "Mark Generation Failed in Google Sheets",
+      "retryOnFail": true,
+      "waitBetweenTries": 2500,
+      "maxTries": 3,
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Marks render, PDF generation/validation, or Drive upload failure after the request reservation. Reconcile Drive/PDF state before manually retrying."
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_TAB",
+          "mode": "list",
+          "cachedResultName": "Configure after import",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "request_id",
+              "lookupValue": "={{ $('Normalize Invoice Request').item.json.request_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2848,
+        576
+      ],
+      "id": "68ba36d3-d89c-417e-a425-f73bf1219006",
+      "name": "Find Existing Request in Google Sheets",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e3aa1d8e-d2fb-43be-a60a-f04fdc3b420d",
+              "name": "email_ready",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        928
+      ],
+      "id": "ac1291bb-8fe0-41a0-879d-0d82eb077bd2",
+      "name": "Mark Email Ready"
     },
     {
       "parameters": {
@@ -665,71 +1750,106 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose",
+            "typeValidation": "strict",
             "version": 3
           },
           "conditions": [
             {
-              "id": "504d905c-117f-47bb-8e6f-dd26e73f9c9d",
-              "leftValue": "={{ $json.invoice_number }}",
-              "rightValue": "",
+              "id": "24fdbfe6-b720-4ab8-b5a2-a034a009f8ab",
+              "leftValue": "={{ $json.email_ready === true }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "empty",
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             }
           ],
           "combinator": "and"
         },
-        "looseTypeValidation": true,
         "options": {}
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        352,
-        -640
+        512,
+        528
       ],
-      "id": "3163e49c-d56e-4069-87a9-ebe391dc7d90",
-      "name": "Invoice Number Empty?"
+      "id": "68857f54-1ec7-4d84-a1e3-04235eee3434",
+      "name": "Email Ready?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, status: 'accepted', request_id: $('Normalize Invoice Request').item.json.request_id, message: 'Invoice request accepted for processing. Check the invoice status before retrying.' } }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -2400,
+        576
+      ],
+      "id": "a16eb4e0-3909-467a-a694-5f99cf3d241d",
+      "name": "Return Existing Invoice1",
+      "notes": "Early acknowledgement for the new-request path; downstream processing continues. Do not claim the invoice was sent in this response."
     }
   ],
   "connections": {
-    "Webhook": {
+    "Authenticated Invoice Webhook": {
       "main": [
         [
           {
-            "node": "Prepare Invoice Data",
+            "node": "Normalize Invoice Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Invoice Data": {
+    "Normalize Invoice Request": {
       "main": [
         [
           {
-            "node": "Validate Request",
+            "node": "Validate Invoice Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Validate Request": {
+    "Validate Invoice Request": {
       "main": [
         [
           {
-            "node": "Invoice Number Empty?",
+            "node": "Find Existing Request in Google Sheets",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Return Validation Error",
+            "node": "Reject Invalid Invoice Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Already Exists?": {
+      "main": [
+        [
+          {
+            "node": "Return Existing Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Existing Invoice1",
             "type": "main",
             "index": 0
           }
@@ -740,51 +1860,76 @@
       "main": [
         [
           {
-            "node": "Merge Invoice Data",
+            "node": "Generate Invoice Dates",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge Invoice Data": {
+    "Generate Invoice Dates": {
       "main": [
         [
           {
-            "node": "Generate Dates",
+            "node": "Calculate Tax and Invoice Total",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generate Dates": {
+    "Calculate Tax and Invoice Total": {
       "main": [
         [
           {
-            "node": "Calculate GST & Total",
+            "node": "Reserve Invoice Request in Google Sheets",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Calculate GST & Total": {
+    "Reserve Invoice Request in Google Sheets": {
       "main": [
         [
           {
-            "node": "Generate Invoice HTML",
+            "node": "Escape Invoice Text for HTML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Invoice Sheet Failure",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generate Invoice HTML": {
+    "Escape Invoice Text for HTML": {
+      "main": [
+        [
+          {
+            "node": "Render Invoice HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Invoice HTML": {
       "main": [
         [
           {
             "node": "Generate Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Generation Failed in Google Sheets",
             "type": "main",
             "index": 0
           }
@@ -795,74 +1940,268 @@
       "main": [
         [
           {
-            "node": "Send Invoice Email",
+            "node": "Validate Generated PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Generation Failed in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Generated PDF": {
+      "main": [
+        [
+          {
+            "node": "Upload Invoice PDF to Drive",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Upload PDF to Google Drive",
+            "node": "Reattach PDF After Drive and Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Generation Failed in Google Sheets",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upload PDF to Google Drive": {
+    "Upload Invoice PDF to Drive": {
       "main": [
         [
           {
-            "node": "Save Invoice Record",
+            "node": "Update Invoice Record - Pending Email",
             "type": "main",
             "index": 0
           }
-        ]
-      ]
-    },
-    "Save Invoice Record": {
-      "main": [
+        ],
         [
           {
-            "node": "Merge Invoice Success Data",
+            "node": "Mark Generation Failed in Google Sheets",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Send Invoice Email": {
-      "main": [
-        [
+          },
           {
-            "node": "Merge Invoice Success Data",
+            "node": "Reattach PDF After Drive and Sheet",
             "type": "main",
             "index": 1
           }
         ]
       ]
     },
-    "Send Slack Notification": {
+    "Update Invoice Record - Pending Email": {
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Mark Email Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Invoice Sheet Failure",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Reattach PDF After Drive and Sheet",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Reattach PDF After Drive and Sheet": {
+      "main": [
+        [
+          {
+            "node": "Email Ready?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge Invoice Success Data": {
+    "Email Invoice PDF to Client": {
       "main": [
         [
           {
-            "node": "Send Slack Notification",
+            "node": "Mark Invoice Sent in Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Email Failed for Manual Check",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Invoice Number Empty?": {
+    "Mark Invoice Sent in Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Return Invoice Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Invoice Sheet Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Email Failed for Manual Check": {
+      "main": [
+        [
+          {
+            "node": "Alert Gmail Manual Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Invoice Sheet Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Invoice Success": {
+      "main": [
+        [
+          {
+            "node": "Notify Invoice Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Gmail Manual Check": {
+      "main": [
+        [
+          {
+            "node": "Return Email Manual Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Invoice Sheet Failure": {
+      "main": [
+        [
+          {
+            "node": "Return Invoice Persistence Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Duplicate Lookup Failure": {
+      "main": [
+        [
+          {
+            "node": "Return Duplicate Check Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert PDF Generation Failure": {
+      "main": [
+        [
+          {
+            "node": "Return PDF Generation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Generation Failed in Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Alert PDF Generation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Invoice Sheet Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Existing Request in Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Request Already Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Duplicate Lookup Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Email Ready": {
+      "main": [
+        [
+          {
+            "node": "Reattach PDF After Drive and Sheet",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Email Ready?": {
+      "main": [
+        [
+          {
+            "node": "Email Invoice PDF to Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Existing Invoice1": {
       "main": [
         [
           {
@@ -870,19 +2209,11 @@
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "Merge Invoice Data",
-            "type": "main",
-            "index": 1
-          }
         ]
       ]
     }
   },
-  "pinData": {},
   "meta": {
-    "templateCredsSetupCompleted": true
+    "templateCredsSetupCompleted": false
   }
 }

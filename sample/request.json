@@ -1,0 +1,7 @@
+{
+  "request_id": "DEMO-INVOICE-2026-001",
+  "client_name": "Example Customer",
+  "client_email": "client@example.com",
+  "service": "Workflow setup and configuration",
+  "amount": 1000.0
+}
