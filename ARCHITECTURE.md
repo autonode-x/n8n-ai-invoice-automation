@@ -1,6 +1,5 @@
 # Invoice PDF Generation & Delivery — Architecture
 
-![Architecture infographic](assets/architecture.png)
 
 
 **Validate an invoice request, reserve a record, calculate a template total, render/store a PDF, and email it to the submitted client address.**
